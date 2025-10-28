@@ -21,22 +21,22 @@ async def lifespan(app: FastAPI):
             try:
                 tools = await task_manager_mcp.mcp_service.list_tools()
                 print("Available tools:", tools)
-                llm = initialise_llm(tools=tools)
-                print("llm initialised ✅", llm)
+                initialise_llm(tools=tools)
+                print("✅ LLM initialized with tools")
                 
-                # Store agent in app state for use in routes
-                app.state.llm = llm
+                # Store tools and mcp_service in app state for use in routes
+                app.state.tools = tools
                 app.state.mcp_service = task_manager_mcp.mcp_service
                 
             except Exception as e:
                 print(f"Failed to list tools: {e}")
-                app.state.llm = None
+                app.state.tools = None
         else:
             print("Failed to connect to MCP")
-            app.state.llm = None
+            app.state.tools = None
     except Exception as e:
         print(f"Error during startup: {e}")
-        app.state.llm = None
+        app.state.tools = None
     
     print("Application startup complete")
     yield

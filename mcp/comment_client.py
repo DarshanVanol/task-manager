@@ -26,3 +26,22 @@ class CommentClient:
         
         return response.text
     
+    def create_comment(self, entity_id, content):
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+
+        body = {
+            "content": content,
+            "entity_id": entity_id
+        }
+
+        response = requests.post(
+            f"{self.base_url}/api/v1/comments/",
+            headers=headers,
+            json=body
+        )
+        
+        return response.text
+    

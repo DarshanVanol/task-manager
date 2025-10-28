@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Body, Request, HTTPException
+from fastapi import APIRouter, Body, Request, HTTPException, Depends
 from pydantic import BaseModel
-from app.services.openai import llm
 import logging
-from langchain.messages import AIMessage
+from app.services.openai import run_agent
+from app.dependencies import User, get_current_user
 
 router = APIRouter(prefix="/chat")
 
@@ -16,33 +16,33 @@ class ChatResponse(BaseModel):
     success: bool
 
 
-@router.post("/", response_model=ChatResponse)
-async def create_chat(request: Request, input: InputMessage = Body()):
+@router.post("/")
+async def create_chat(request: Request, input: InputMessage = Body(),user:User = Depends(get_current_user) ):
     """
     Chat endpoint that uses the agent with MCP tools
     """
     try:
+        # Get tools from app state
+        tools = request.app.state.tools
 
-        # Get agent from app state
-        llm = request.app.state.llm
-
-        if llm is None:
+        if tools is None:
             raise HTTPException(
                 status_code=503,
-                detail="Agent not initialized. MCP service may not be connected.",
+                detail="Tools not initialized. MCP service may not be connected.",
             )
 
-        logging.info("HI")
-        # Invoke the agent with the user input
-        result = llm.invoke(input.text)
+        logging.info(f"🚀 Processing chat request: {input.text}")
+        
+        # Run the agent with tool calling loop
+        result = await run_agent(input.text, user.token, tools)
 
-        logging.info("RESULT", result)
+        logging.info(f"✅ Agent response: {result}")
 
-
-        return ChatResponse(
-            output=result, success=True
-        )
+        return result
 
     except Exception as e:
-        logging.error(e)
+        import traceback
+        error_details = traceback.format_exc()
+        logging.error(f"Chat error: {type(e).__name__}: {str(e)}")
+        logging.error(f"Full traceback:\n{error_details}")
         raise HTTPException(status_code=500, detail=f"Chat service error: {str(e)}")

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     MCP_RETRY_ATTEMPTS: int = 3
     MCP_RETRY_DELAY: int = 2  # seconds
     MCP_TIMEOUT: int = 30  # seconds
+    DJANGO_SECRET_KEY:str
+    JWT_ALGORITHM:str 
 
 
 settings = Settings()
